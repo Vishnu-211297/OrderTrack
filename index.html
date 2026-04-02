@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OrderTrack — WhatsApp Order Manager</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0f0f0f;
+      --bg2: #161616;
+      --bg3: #1e1e1e;
+      --border: rgba(255,255,255,0.08);
+      --border2: rgba(255,255,255,0.14);
+      --text: #f0ede8;
+      --text2: #8a8782;
+      --text3: #5a5856;
+      --green: #22c55e;
+      --green-bg: rgba(34,197,94,0.1);
+      --amber: #f59e0b;
+      --amber-bg: rgba(245,158,11,0.1);
+      --blue: #3b82f6;
+      --blue-bg: rgba(59,130,246,0.1);
+      --red: #ef4444;
+      --red-bg: rgba(239,68,68,0.08);
+      --teal: #14b8a6;
+      --teal-bg: rgba(20,184,166,0.1);
+      --wa: #25D366;
+      --radius: 10px;
+      --radius-sm: 6px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 15px; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Layout ── */
+    .app { display: flex; flex-direction: column; min-height: 100vh; max-width: 480px; margin: 0 auto; }
+    @media(min-width:900px) { .app { max-width: 900px; flex-direction: row; } }
+
+    /* ── Sidebar / Header ── */
+    .sidebar {
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      padding: 1.25rem 1.25rem 0.75rem;
+    }
+    @media(min-width:900px) {
+      .sidebar {
+        width: 260px;
+        flex-shrink: 0;
+        border-bottom: none;
+        border-right: 1px solid var(--border);
+        padding: 1.75rem 1.25rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow-y: auto;
+      }
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 1rem;
+    }
+    @media(min-width:900px) { .logo { margin-bottom: 0; } }
+    .logo-icon {
+      width: 32px; height: 32px;
+      background: var(--wa);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .logo-icon svg { width: 18px; height: 18px; fill: #fff; }
+    .logo-name { font-size: 15px; font-weight: 600; letter-spacing: -0.3px; }
+    .logo-sub { font-size: 11px; color: var(--text3); margin-top: 1px; font-family: 'DM Mono', monospace; }
+
+    .metrics-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-bottom: 0.75rem;
+    }
+    @media(min-width:900px) { .metrics-row { grid-template-columns: 1fr 1fr; margin-bottom: 0; } }
+    .metric {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 10px 8px;
+    }
+    .metric-val { font-size: 20px; font-weight: 600; line-height: 1; letter-spacing: -0.5px; }
+    .metric-val.green { color: var(--green); }
+    .metric-val.amber { color: var(--amber); }
+    .metric-label { font-size: 10px; color: var(--text3); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .nav-tabs {
+      display: flex;
+      gap: 2px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding-bottom: 0.5px;
+    }
+    @media(min-width:900px) { .nav-tabs { flex-direction: column; gap: 2px; overflow-x: visible; } }
+    .nav-tab {
+      flex-shrink: 0;
+      padding: 7px 12px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text3);
+      background: none;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      white-space: nowrap;
+    }
+    .nav-tab:hover { color: var(--text2); background: var(--bg3); }
+    .nav-tab.active { color: var(--text); background: var(--bg3); }
+    .nav-tab .count {
+      font-size: 10px;
+      font-family: 'DM Mono', monospace;
+      background: var(--border2);
+      border-radius: 20px;
+      padding: 1px 6px;
+      color: var(--text2);
+    }
+    .nav-tab.active .count { background: var(--wa); color: #fff; }
+
+    /* ── Main ── */
+    .main { flex: 1; padding: 1rem; }
+    @media(min-width:900px) { .main { padding: 1.75rem; } }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+    }
+    .topbar-title { font-size: 16px; font-weight: 600; letter-spacing: -0.3px; }
+    .btn-add {
+      display: flex; align-items: center; gap: 6px;
+      background: var(--wa);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn-add:hover { opacity: 0.88; }
+    .btn-add svg { width: 14px; height: 14px; }
+
+    /* ── Order cards ── */
+    .orders { display: flex; flex-direction: column; gap: 8px; }
+    .order-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      animation: fadeIn 0.2s ease;
+    }
+    .order-card:hover { border-color: var(--border2); background: var(--bg3); }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+
+    .card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px; }
+    .card-id { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--text3); }
+    .badge {
+      font-size: 10px; font-weight: 500;
+      padding: 3px 8px; border-radius: 20px;
+      text-transform: uppercase; letter-spacing: 0.4px;
+    }
+    .badge-new { background: var(--blue-bg); color: var(--blue); }
+    .badge-confirmed { background: var(--amber-bg); color: var(--amber); }
+    .badge-shipped { background: var(--teal-bg); color: var(--teal); }
+    .badge-done { background: var(--green-bg); color: var(--green); }
+    .badge-cancelled { background: var(--red-bg); color: var(--red); }
+
+    .card-name { font-size: 14px; font-weight: 500; margin-bottom: 2px; }
+    .card-meta { font-size: 12px; color: var(--text3); }
+    .card-items {
+      font-size: 12px; color: var(--text2);
+      margin: 8px 0;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .card-bottom {
+      display: flex; align-items: center; justify-content: space-between;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+    }
+    .card-amount { font-size: 14px; font-weight: 600; font-family: 'DM Mono', monospace; }
+    .btn-wa {
+      display: flex; align-items: center; gap: 5px;
+      background: none;
+      border: 1px solid var(--border2);
+      border-radius: var(--radius-sm);
+      padding: 5px 10px;
+      font-size: 11px;
+      color: var(--text2);
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      transition: all 0.15s;
+    }
+    .btn-wa:hover { border-color: var(--wa); color: var(--wa); }
+    .btn-wa svg { width: 13px; height: 13px; fill: currentColor; }
+
+    .empty {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text3);
+      font-size: 13px;
+    }
+    .empty-icon { font-size: 32px; margin-bottom: 10px; opacity: 0.4; }
+
+    /* ── Modal ── */
+    .overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 0;
+    }
+    @media(min-width:600px) { .overlay { align-items: center; padding: 1rem; } }
+    .overlay.open { display: flex; }
+
+    .modal {
+      background: var(--bg2);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius) var(--radius) 0 0;
+      padding: 1.5rem 1.25rem;
+      width: 100%;
+      max-width: 480px;
+      max-height: 92vh;
+      overflow-y: auto;
+      animation: slideUp 0.22s ease;
+    }
+    @media(min-width:600px) { .modal { border-radius: var(--radius); } }
+    @keyframes slideUp { from { transform: translateY(40px); opacity:0; } to { transform: translateY(0); opacity:1; } }
+
+    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
+    .modal-title { font-size: 15px; font-weight: 600; }
+    .btn-close {
+      background: var(--bg3); border: 1px solid var(--border); border-radius: 6px;
+      width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: var(--text2); font-size: 16px; line-height: 1;
+    }
+    .btn-close:hover { color: var(--text); }
+
+    .field { margin-bottom: 1rem; }
+    .field label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text3); margin-bottom: 6px; font-weight: 500; }
+    .field input, .field select, .field textarea {
+      width: 100%;
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius-sm);
+      padding: 9px 12px;
+      font-size: 13px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--wa); }
+    .field textarea { resize: vertical; min-height: 70px; line-height: 1.5; }
+    .field select option { background: var(--bg2); }
+
+    .modal-actions { display: flex; gap: 8px; margin-top: 1.25rem; }
+    .btn-save {
+      flex: 1;
+      background: var(--wa);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn-save:hover { opacity: 0.88; }
+    .btn-cancel {
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      color: var(--text2);
+      border-radius: var(--radius-sm);
+      padding: 10px 18px;
+      font-size: 13px;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+    }
+
+    /* Detail modal */
+    .detail-row {
+      display: flex; justify-content: space-between;
+      font-size: 13px;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-key { color: var(--text3); }
+    .detail-val { color: var(--text); text-align: right; max-width: 60%; }
+
+    .status-pills { display: flex; gap: 6px; flex-wrap: wrap; margin: 1rem 0; }
+    .pill {
+      padding: 6px 12px;
+      font-size: 11px;
+      font-weight: 500;
+      border-radius: 20px;
+      border: 1px solid var(--border2);
+      background: none;
+      color: var(--text3);
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      transition: all 0.15s;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .pill:hover { border-color: var(--border2); color: var(--text2); }
+    .pill.active-new { background: var(--blue-bg); color: var(--blue); border-color: var(--blue); }
+    .pill.active-confirmed { background: var(--amber-bg); color: var(--amber); border-color: var(--amber); }
+    .pill.active-shipped { background: var(--teal-bg); color: var(--teal); border-color: var(--teal); }
+    .pill.active-done { background: var(--green-bg); color: var(--green); border-color: var(--green); }
+    .pill.active-cancelled { background: var(--red-bg); color: var(--red); border-color: var(--red); }
+
+    .btn-wa-large {
+      width: 100%;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      background: var(--wa);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 11px;
+      font-size: 14px;
+      font-weight: 500;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      margin-top: 1rem;
+      transition: opacity 0.15s;
+    }
+    .btn-wa-large:hover { opacity: 0.88; }
+    .btn-wa-large svg { width: 18px; height: 18px; fill: #fff; }
+
+    .btn-delete {
+      width: 100%; margin-top: 8px;
+      background: none; border: 1px solid var(--border);
+      color: var(--red); border-radius: var(--radius-sm);
+      padding: 9px; font-size: 12px;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .btn-delete:hover { background: var(--red-bg); border-color: var(--red); }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%) translateY(10px);
+      background: var(--bg3); border: 1px solid var(--border2);
+      color: var(--text); border-radius: var(--radius-sm);
+      padding: 10px 18px; font-size: 13px;
+      opacity: 0; transition: all 0.25s;
+      z-index: 999; white-space: nowrap;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      </div>
+      <div>
+        <div class="logo-name">OrderTrack</div>
+        <div class="logo-sub">whatsapp orders</div>
+      </div>
+    </div>
+
+    <div class="metrics-row">
+      <div class="metric"><div class="metric-val" id="m-total">0</div><div class="metric-label">Total</div></div>
+      <div class="metric"><div class="metric-val amber" id="m-pending">0</div><div class="metric-label">Pending</div></div>
+      <div class="metric"><div class="metric-val green" id="m-done">0</div><div class="metric-label">Done</div></div>
+      <div class="metric"><div class="metric-val green" id="m-rev">₹0</div><div class="metric-label">Revenue</div></div>
+    </div>
+
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="setTab('all',this)">All <span class="count" id="cnt-all">0</span></button>
+      <button class="nav-tab" onclick="setTab('new',this)">New <span class="count" id="cnt-new">0</span></button>
+      <button class="nav-tab" onclick="setTab('confirmed',this)">Confirmed <span class="count" id="cnt-confirmed">0</span></button>
+      <button class="nav-tab" onclick="setTab('shipped',this)">Shipped <span class="count" id="cnt-shipped">0</span></button>
+      <button class="nav-tab" onclick="setTab('done',this)">Done <span class="count" id="cnt-done">0</span></button>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="tab-title">All orders</div>
+      <button class="btn-add" onclick="openAdd()">
+        <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 1v12M1 7h12"/></svg>
+        New order
+      </button>
+    </div>
+    <div class="orders" id="orders-list"></div>
+  </div>
+</div>
+
+<!-- Add Order Modal -->
+<div class="overlay" id="add-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">New order</div>
+      <button class="btn-close" onclick="closeOverlay('add-overlay')">×</button>
+    </div>
+    <div class="field"><label>Customer name *</label><input id="f-name" placeholder="Priya Nair" autocomplete="off" /></div>
+    <div class="field"><label>WhatsApp number</label><input id="f-phone" placeholder="+91 98765 43210" type="tel" /></div>
+    <div class="field"><label>Items ordered *</label><textarea id="f-items" placeholder="2x Red kurta (M), 1x Blue palazzo (L)"></textarea></div>
+    <div class="field"><label>Total amount (₹)</label><input id="f-amount" type="number" placeholder="1200" /></div>
+    <div class="field"><label>Delivery address</label><input id="f-addr" placeholder="Optional" /></div>
+    <div class="field"><label>Notes</label><input id="f-notes" placeholder="Prepaid / COD / special requests" /></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeOverlay('add-overlay')">Cancel</button>
+      <button class="btn-save" onclick="saveOrder()">Save order</button>
+    </div>
+  </div>
+</div>
+
+<!-- Detail Modal -->
+<div class="overlay" id="detail-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="d-title">Order</div>
+      <button class="btn-close" onclick="closeOverlay('detail-overlay')">×</button>
+    </div>
+    <div id="d-body"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STORE_KEY = 'ordertrack_v2';
+let orders = [];
+let currentTab = 'all';
+let editingId = null;
+
+function load() {
+  try { orders = JSON.parse(localStorage.getItem(STORE_KEY)) || []; } catch(e) { orders = []; }
+  if (!orders.length) seedDemo();
+}
+
+function save() {
+  localStorage.setItem(STORE_KEY, JSON.stringify(orders));
+}
+
+function seedDemo() {
+  const today = fmtDate(new Date());
+  orders = [
+    { id: 'ORD-001', name: 'Priya Nair', phone: '+919876543210', items: '1x Green anarkali (M), 1x dupatta', amount: 1850, addr: 'Kakkanad, Kochi', notes: 'Prepaid', status: 'new', date: today },
+    { id: 'ORD-002', name: 'Meera Varghese', phone: '+919845123456', items: '2x Cotton kurti (S)', amount: 980, addr: 'Thrippunithura', notes: 'COD', status: 'confirmed', date: today },
+    { id: 'ORD-003', name: 'Fathima T', phone: '+919961234567', items: '1x Silk saree, 1x blouse piece', amount: 3200, addr: 'Ernakulam', notes: 'Gift wrap', status: 'shipped', date: today },
+    { id: 'ORD-004', name: 'Anjali Mohan', phone: '+919744321654', items: '3x Palazzo pants (L, L, M)', amount: 1470, addr: 'Palarivattom', notes: 'Prepaid', status: 'done', date: today },
+  ];
+  save();
+}
+
+function fmtDate(d) {
+  return d.getDate() + ' ' + d.toLocaleString('default',{month:'short'}) + ' ' + d.getFullYear().toString().slice(-2);
+}
+
+function nextId() {
+  if (!orders.length) return 'ORD-001';
+  const nums = orders.map(o => parseInt(o.id.split('-')[1]||0));
+  return 'ORD-' + String(Math.max(...nums)+1).padStart(3,'0');
+}
+
+const statusLabel = { new:'New', confirmed:'Confirmed', shipped:'Shipped', done:'Done', cancelled:'Cancelled' };
+const badgeClass  = { new:'badge-new', confirmed:'badge-confirmed', shipped:'badge-shipped', done:'badge-done', cancelled:'badge-cancelled' };
+const tabTitle    = { all:'All orders', new:'New orders', confirmed:'Confirmed', shipped:'Shipped', done:'Completed' };
+
+function render() {
+  const list = currentTab === 'all' ? orders : orders.filter(o => o.status === currentTab);
+  const el = document.getElementById('orders-list');
+  document.getElementById('tab-title').textContent = tabTitle[currentTab];
+
+  if (!list.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">📋</div>No orders here yet.</div>`;
+  } else {
+    el.innerHTML = list.map(o => `
+      <div class="order-card" onclick="openDetail('${o.id}')">
+        <div class="card-top">
+          <span class="card-id">${o.id}</span>
+          <span class="badge ${badgeClass[o.status]}">${statusLabel[o.status]}</span>
+        </div>
+        <div class="card-name">${esc(o.name)}</div>
+        <div class="card-meta">${esc(o.phone||'—')} · ${o.date}</div>
+        <div class="card-items">${esc(o.items)}</div>
+        <div class="card-bottom">
+          <span class="card-amount">₹${Number(o.amount||0).toLocaleString('en-IN')}</span>
+          ${o.phone ? `<button class="btn-wa" onclick="event.stopPropagation();openWA('${o.id}')">
+            <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            Message
+          </button>` : ''}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  updateMetrics();
+  updateCounts();
+}
+
+function updateMetrics() {
+  document.getElementById('m-total').textContent = orders.length;
+  document.getElementById('m-pending').textContent = orders.filter(o => o.status==='new'||o.status==='confirmed').length;
+  document.getElementById('m-done').textContent = orders.filter(o => o.status==='done').length;
+  const rev = orders.filter(o=>o.status!=='cancelled').reduce((s,o)=>s+Number(o.amount||0),0);
+  document.getElementById('m-rev').textContent = '₹'+(rev>=1000 ? (rev/1000).toFixed(1)+'k' : rev);
+}
+
+function updateCounts() {
+  const counts = { all: orders.length, new:0, confirmed:0, shipped:0, done:0 };
+  orders.forEach(o => { if (counts[o.status]!==undefined) counts[o.status]++; });
+  Object.keys(counts).forEach(k => {
+    const el = document.getElementById('cnt-'+k);
+    if (el) el.textContent = counts[k];
+  });
+}
+
+function setTab(tab, el) {
+  currentTab = tab;
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  render();
+}
+
+function openAdd() {
+  editingId = null;
+  ['f-name','f-phone','f-items','f-amount','f-addr','f-notes'].forEach(id => document.getElementById(id).value = '');
+  document.querySelector('#add-overlay .modal-title').textContent = 'New order';
+  openOverlay('add-overlay');
+  setTimeout(() => document.getElementById('f-name').focus(), 100);
+}
+
+function saveOrder() {
+  const name = document.getElementById('f-name').value.trim();
+  const items = document.getElementById('f-items').value.trim();
+  if (!name || !items) { showToast('Please enter name and items'); return; }
+
+  const phone = document.getElementById('f-phone').value.trim();
+  const amount = parseFloat(document.getElementById('f-amount').value) || 0;
+  const addr = document.getElementById('f-addr').value.trim();
+  const notes = document.getElementById('f-notes').value.trim();
+
+  if (editingId) {
+    const o = orders.find(x => x.id === editingId);
+    if (o) { o.name=name; o.phone=phone; o.items=items; o.amount=amount; o.addr=addr; o.notes=notes; }
+  } else {
+    orders.unshift({ id: nextId(), name, phone, items, amount, addr, notes, status: 'new', date: fmtDate(new Date()) });
+  }
+
+  save();
+  closeOverlay('add-overlay');
+  closeOverlay('detail-overlay');
+  render();
+  showToast(editingId ? 'Order updated' : 'Order saved ✓');
+}
+
+function openDetail(id) {
+  const o = orders.find(x => x.id === id);
+  if (!o) return;
+  document.getElementById('d-title').textContent = o.id;
+  const statuses = ['new','confirmed','shipped','done','cancelled'];
+  document.getElementById('d-body').innerHTML = `
+    <div style="margin-bottom:4px;font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Status</div>
+    <div class="status-pills">
+      ${statuses.map(s => `<button class="pill ${o.status===s?'active-'+s:''}" onclick="setStatus('${id}','${s}',this)">${statusLabel[s]}</button>`).join('')}
+    </div>
+    <div style="border-top:1px solid var(--border);padding-top:12px;margin-bottom:4px">
+      ${row('Items', o.items)}
+      ${row('Amount', '₹'+Number(o.amount||0).toLocaleString('en-IN'))}
+      ${row('Phone', o.phone||'—')}
+      ${row('Address', o.addr||'—')}
+      ${row('Notes', o.notes||'—')}
+      ${row('Date', o.date)}
+    </div>
+    ${o.phone ? `<button class="btn-wa-large" onclick="openWA('${id}')">
+      <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      Message on WhatsApp
+    </button>` : ''}
+    <button class="btn-delete" onclick="deleteOrder('${id}')">Delete this order</button>
+  `;
+  openOverlay('detail-overlay');
+}
+
+function row(k, v) {
+  return `<div class="detail-row"><span class="detail-key">${k}</span><span class="detail-val">${esc(String(v))}</span></div>`;
+}
+
+function setStatus(id, status, btn) {
+  const o = orders.find(x => x.id === id);
+  if (!o) return;
+  o.status = status;
+  save();
+  btn.closest('.status-pills').querySelectorAll('.pill').forEach(p => {
+    p.className = 'pill';
+  });
+  btn.classList.add('active-'+status);
+  render();
+  showToast('Status → ' + statusLabel[status]);
+}
+
+function deleteOrder(id) {
+  if (!confirm('Delete this order?')) return;
+  orders = orders.filter(x => x.id !== id);
+  save();
+  closeOverlay('detail-overlay');
+  render();
+  showToast('Order deleted');
+}
+
+function openWA(id) {
+  const o = orders.find(x => x.id === id);
+  if (!o || !o.phone) return;
+  const phone = o.phone.replace(/\D/g,'');
+  const msg = encodeURIComponent(
+    `Hi ${o.name}! 👋\n\nThis is regarding your order *${o.id}*.\n\n📦 Items: ${o.items}\n💰 Amount: ₹${Number(o.amount||0).toLocaleString('en-IN')}\n📍 Status: *${statusLabel[o.status]}*\n\nLet us know if you have any questions!`
+  );
+  window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
+}
+
+function openOverlay(id) { document.getElementById(id).classList.add('open'); }
+function closeOverlay(id) { document.getElementById(id).classList.remove('open'); }
+
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Close overlay on background click
+document.querySelectorAll('.overlay').forEach(ov => {
+  ov.addEventListener('click', e => { if (e.target === ov) ov.classList.remove('open'); });
+});
+
+load();
+render();
+</script>
+</body>
+</html>
